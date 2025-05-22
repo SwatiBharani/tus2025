@@ -1,0 +1,123 @@
+/* #Reset & Basics (Inspired by E. Meyers)
+================================================== */
+	html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
+		margin: 0;
+		padding: 0;
+		border: 0;
+		font-size: 100%;
+		font: inherit;
+		vertical-align: baseline; }
+	article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {
+		display: block; }
+	body {
+		line-height: 1; }
+	ol, ul {
+		list-style: none; }
+	blockquote, q {
+		quotes: none; }
+	blockquote:before, blockquote:after,
+	q:before, q:after {
+		content: '';
+		content: none; }
+	table {
+		border-collapse: collapse;
+		border-spacing: 0; }
+
+
+
+body {
+    font-family: Helvetica, Arial, sans-serif;
+}
+#main-wrapper {
+    width: 700px;
+    margin: 20px auto;
+}
+.clr { clear: both; }
+
+
+
+/* Text
+============================ */
+
+h1 {
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: 30px;
+	font-style: normal;
+    text-align: center;
+    margin: 0 0 20px 0px;
+}
+
+
+
+/* Controls
+============================ */
+
+#update {
+    width: 320px;
+    margin: 0 auto .5rem auto;
+}
+
+.slider .uservalue {
+    font-size: 1.4rem;
+    font-weight: normal;
+    text-align: center;
+    width: 100%;
+}
+
+
+
+
+/* Chart
+============================ */
+
+#chart-wrapper {
+    width: 100%;
+    margin: 0 auto;
+    font-size: 5rem;
+    text-align: center;
+}
+#chart {
+    margin: 0 auto;
+}
+
+
+/*** Axes ***/
+    
+.axis text {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: .8rem;
+}
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  stroke-width: 1px;
+  shape-rendering: crispEdges;
+}
+.x.axis line { stroke: #e0e0e0; }
+.y.axis line { stroke: #e0e0e0; }
+.x.axis path { display: none; }
+.y.axis path { display: none; }
+
+
+/*** Bars ***/
+
+.bar rect {
+    stroke: #fff;
+    shape-rendering: crispEdges;
+}
+.bar rect.background {
+    fill: #eee;
+}
+.bar rect.percent {
+    fill: #5dc1e2;
+}
+.bar text {
+    font-size: .9rem;
+    fill: #000;	
+}
+
+
+
+
+

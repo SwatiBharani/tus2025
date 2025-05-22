@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<head>
+<meta charset="utf-8">
+<title>Basic Slider</title>
+<link rel="stylesheet" href="style/style.css" type="text/css" media="screen" />
+</head>
+
+
+<div id="main-wrapper">
+	<h1>Basic Slider</h1>
+	<div id="update">
+		<div id="timeslider" class="slider">
+			<div class="uservalue"></div>
+			<div class="sliderholder"></div>
+		</div>
+        <div class="clr"></div>
+	</div><!-- @end #update -->
+    
+    
+    <div id="chart-wrapper">
+        <div id="chart" style="margin-top:40px;text-decoration:underline"></div>
+        <div class="clr"></div>
+    </div><!-- @end #chart-wrapper -->
+    
+    
+    <div class="clr"></div>
+</div><!-- @end #main-wrapper -->
+
+<script src="js/d3.v7.min.js"></script>
+<script src="js/d3-simple-slider.min.js"></script>
+
+<script>
+let USER_INPUT = 30; 
+let timeSlider;
+
+// Initialize
+initChart();
+
+
+function initChart() {
+		
+	addInteraction();
+	updateChart();
+	
+} // @end initChart()
+
+
+
+
+//
+// Add interaction
+//
+function addInteraction() {
+    
+	// Define slider
+	timeSlider = d3.sliderHorizontal()
+		.min(0).max(100)
+		.step(1)
+        .ticks(0)
+        .width(280)
+		.value(USER_INPUT)
+    	.handle(d3.symbol().type(d3.symbolCircle).size(600)())
+    	.displayValue(false)
+    	.on("onchange", function(val) {
+			USER_INPUT = val;
+        	updateChart();
+    	});
+	
+	// Add slider
+	d3.select("#timeslider .sliderholder")
+	    .append("svg")
+	    .attr("width", 330)
+		.attr("height", 35)
+	    // .attr("height", 65)
+	    .append("g")
+		.attr('transform', 'translate(20,20)')
+		.call(timeSlider);
+    
+} // @end addInteraction()
+
+
+
+//
+// Update chart based on USER_INPUT
+//
+function updateChart() {
+	
+	// update value above slider
+	d3.select("#timeslider .uservalue").text(USER_INPUT);
+	
+	// update the chart based on USER_INPUT
+	d3.select("#chart").text("The value is " + USER_INPUT + ".");
+	
+} // @end updateChart()
+</script>

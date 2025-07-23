@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D3 Sleep Patterns by Age Group - Night Cityscape</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(to top, #0a1833 0%, #1a2a4f 100%);
+            font-family: Arial, sans-serif;
+            color: #ffe082;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin: 30px 0;
+            text-shadow: 0 2px 8px #000;
+            font-size: clamp(20px, 3vw, 28px);
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(26, 42, 79, 0.3);
+            border: 2px solid #ffe082;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        
+        .time-display {
+            font-size: 18px;
+            font-weight: bold;
+            min-width: 200px;
+            text-shadow: 0 2px 8px #000;
+        }
+        
+        #timebin-slider {
+            width: 300px;
+            max-width: 80vw;
+            accent-color: #ffe082;
+        }
+        
+        .help-btn {
+            background: #ffe082;
+            color: #1a2a4f;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 8px #000;
+            margin: 10px;
+        }
+        
+        .help-btn:hover {
+            background: #fbbf24;
+            transform: translateY(-1px);
+        }
+        
+        .play-btn {
+            background: #ffe082;
+            color: #1a2a4f;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 12px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 8px #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        
+        .play-btn:hover {
+            background: #fbbf24;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px #000;
+        }
+        
+        .play-btn.playing {
+            background: #ff6b6b;
+        }
+        
+        .play-btn.playing:hover {
+            background: #ff5252;
+        }
+        
+        /* Simple Time Controls */
+        .time-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .time-display {
+            font-size: 18px;
+            font-weight: bold;
+            min-width: 200px;
+            color: #ffe082;
+            text-shadow: 0 2px 8px #000;
+        }
+        
+        #timebin-slider {
+            width: 300px;
+            max-width: 80vw;
+            accent-color: #ffe082;
+        }
+        
+        .time-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffe082;
+            text-shadow: 0 2px 8px #000;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .ampm-indicator {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fbbf24;
+            background: rgba(255, 224, 130, 0.2);
+            padding: 4px 8px;
+            border-radius: 8px;
+            border: 1px solid #ffe082;
+        }
+        
+        .period-description {
+            font-size: 14px;
+            color: #87ceeb;
+            font-weight: 500;
+            text-shadow: 0 1px 4px #000;
+        }
+        
+        /* Legend inside visualization */
+        .window-legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+            background: rgba(26, 42, 79, 0.9);
+            border: 2px solid rgba(255, 224, 130, 0.5);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .window-sample {
+            width: 16px;
+            height: 12px;
+            border-radius: 2px;
+            border: 1px solid #2a3d5f;
+        }
+        
+        .window-asleep {
+            background: #1e3a8a;
+        }
+        
+        .window-awake {
+            background: #fbbf24;
+            box-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
+        }
+        
+        .equals-sign {
+            color: #ffe082;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .emoji-sleeping {
+            font-size: 24px;
+            animation: sleepBob 2s ease-in-out infinite;
+            position: relative;
+        }
+        
+        .emoji-awake {
+            font-size: 24px;
+            animation: awakePulse 1.5s ease-in-out infinite;
+        }
+        
+        .zzz-animation {
+            position: absolute;
+            font-size: 14px;
+            color: #87ceeb;
+            font-weight: bold;
+            animation: zzzFloat 3s ease-in-out infinite;
+            pointer-events: none;
+        }
+        
+        .zzz-1 {
+            top: -15px;
+            right: -5px;
+            animation-delay: 0s;
+        }
+        
+        .zzz-2 {
+            top: -25px;
+            right: 5px;
+            animation-delay: 0.5s;
+        }
+        
+        .zzz-3 {
+            top: -35px;
+            right: 15px;
+            animation-delay: 1s;
+        }
+        
+        @keyframes sleepBob {
+            0%, 100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-3px) rotate(-2deg);
+            }
+        }
+        
+        @keyframes awakePulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+        
+        @keyframes zzzFloat {
+            0% {
+                opacity: 0;
+                transform: translateY(0px) scale(0.8);
+            }
+            30% {
+                opacity: 1;
+                transform: translateY(-10px) scale(1);
+            }
+            70% {
+                opacity: 1;
+                transform: translateY(-20px) scale(1.1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.9);
+            }
+        }
+        
+        .legend-text-sleeping {
+            color: #87ceeb;
+            text-shadow: 0 2px 8px #000;
+        }
+        
+        .legend-text-awake {
+            color: #fbbf24;
+            text-shadow: 0 2px 8px #000;
+        }
+        
+        .viz-container {
+            background: rgba(26, 42, 79, 0.3);
+            border: 2px solid #ffe082;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            overflow-x: auto;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(26, 42, 79, 0.95);
+            color: #ffe082;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            box-shadow: 0 4px 12px #000;
+            z-index: 1000;
+            pointer-events: none;
+            white-space: nowrap;
+            border: 1px solid #ffe082;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .data-source {
+            text-align: center;
+            margin: 20px 0;
+            color: #b0b0b0;
+            font-size: 12px;
+            text-shadow: 0 1px 4px #000;
+        }
+        
+        /* Help Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: #1a2a4f;
+            color: #ffe082;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            margin: 20px;
+            border: 2px solid #ffe082;
+            box-shadow: 0 8px 32px #000;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .close-btn {
+            background: #fbbf24;
+            color: #1a2a4f;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 10px;
+            }
+            
+            .slider-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .time-display {
+                min-width: auto;
+                text-align: center;
+            }
+        }
+        
+        /* D3 specific styles */
+        .building {
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+        
+        .building:hover {
+            opacity: 0.9;
+        }
+        
+        .window {
+            transition: fill 0.5s ease;
+        }
+        
+        .window.awake {
+            filter: url(#glow);
+        }
+        
+        .age-label {
+            font-weight: bold;
+            text-anchor: middle;
+            font-size: 14px;
+            fill: #ffe082;
+            text-shadow: 0 2px 8px #000;
+        }
+        
+        .y-axis-label {
+            font-size: 12px;
+            fill: #ffe082;
+            text-anchor: end;
+            text-shadow: 0 2px 8px #000;
+        }
+        
+        .y-axis-title {
+            font-size: 14px;
+            font-weight: bold;
+            fill: #ffe082;
+            text-anchor: middle;
+            text-shadow: 0 2px 8px #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Population by Age Group: Sleep Patterns Throughout the Day</h1>
+        
+        <div class="controls">
+            <button class="help-btn" onclick="showHelp()">❓ How to read this visualization</button>
+            <div class="slider-container">
+                <button class="play-btn" id="play-btn" title="Play/Pause timelapse">
+                    <span id="play-icon">▶️</span>
+                    <span id="play-text">Play me!</span>
+                </button>
+                <div class="time-controls">
+                    <label for="timebin-slider">🕐 Time:</label>
+                    <input type="range" id="timebin-slider" min="1" max="48" value="30" />
+                    <span class="time-display" id="time-display">7:30am-7:44am</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="viz-container">
+            <div id="visualization"></div>
+        </div>
+        
+        <div class="data-source">Data source: Time Use Survey, India 2024</div>
+    </div>
+    
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip"></div>
+    
+    <!-- Help Modal -->
+    <div class="modal" id="help-modal">
+        <div class="modal-content">
+            <h3 style="margin-top: 0; color: #fbbf24;">Welcome to the Imaginary Land! 🌃</h3>
+            <p style="text-align: left; line-height: 1.6; margin-bottom: 15px;">
+                Imagine an imaginary land where people of different ages live in different buildings. 
+                All people in their retirement, middle-aged and so on, live together. Obviously children love it! 
+                They have no supervision by adults. (Remember: Imaginary) 🏘️
+            </p>
+            <p style="text-align: left; line-height: 1.6; margin-bottom: 15px;">
+                Each building's 🏢 height is made keeping their occupants in mind. So young people, larger in numbers, 
+                have taller buildings, while the oldies get smaller buildings. Each building has 100 windows that 
+                represent if the occupants are awake or asleep.
+            </p>
+            <p style="text-align: left; line-height: 1.6; margin-bottom: 15px;">
+                During the 24-hour cycle, we track when these folks are awake or asleep - the lights in the windows give it away:
+            </p>
+            <ul style="text-align: left; line-height: 1.6;">
+                <li><span style="color: #fbbf24;">🟡 Yellow lights</span> = they are up and about</li>
+                <li><span style="color: #87ceeb;">🔵 Blue lights</span> = they are asleep</li>
+            </ul>
+            <p style="text-align: left; line-height: 1.6; margin-bottom: 15px;">
+                <strong>What's the point of this imaginary world?</strong> Well, nothing much. 
+                It's a creative visualization tracking Indians' sleep cycle! 😴
+            </p>
+            <p style="margin-bottom: 0; font-size: 14px; color: #b0b0b0; font-style: italic;">
+                Source: Time Use Survey, India 2024 • Hover over buildings to see detailed population and sleep data
+            </p>
+            <button class="close-btn" onclick="closeHelp()">Got it!</button>
+        </div>
+    </div>
+
+    <script>
+        // Sleep data for each age group
+        const barData = [
+            {"agegrp":"6–15","timebin1":95.5,"timebin2":95.5,"timebin3":85.8,"timebin4":85.8,"timebin5":63.3,"timebin6":63.3,"timebin7":38.0,"timebin8":38.0,"timebin9":99.5,"timebin10":99.0,"timebin11":96.0,"timebin12":89.5,"timebin13":69.0,"timebin14":45.3,"timebin15":23.1,"timebin16":10.5,"timebin17":4.1,"timebin18":1.8,"timebin19":0.8,"timebin20":0.4,"timebin21":0.2,"timebin22":0.2,"timebin23":0.4,"timebin24":0.8,"timebin25":1.7,"timebin26":2.8,"timebin27":5.0,"timebin28":9.1,"timebin29":15.6,"timebin30":21.2,"timebin31":23.5,"timebin32":22.4,"timebin33":15.1,"timebin34":9.2,"timebin35":3.8,"timebin36":1.6,"timebin37":0.6,"timebin38":0.4,"timebin39":0.4,"timebin40":1.1,"timebin41":4.5,"timebin42":14.3,"timebin43":36.8,"timebin44":62.1,"timebin45":85.3,"timebin46":94.4,"timebin47":97.6,"timebin48":98.5},
+            {"agegrp":"16–25","timebin1":96.9,"timebin2":97.8,"timebin3":95.2,"timebin4":95.3,"timebin5":85.0,"timebin6":85.0,"timebin7":68.1,"timebin8":68.1,"timebin9":98.7,"timebin10":97.3,"timebin11":90.0,"timebin12":78.8,"timebin13":54.9,"timebin14":35.9,"timebin15":17.8,"timebin16":9.2,"timebin17":4.1,"timebin18":2.3,"timebin19":1.2,"timebin20":1.0,"timebin21":0.7,"timebin22":0.8,"timebin23":1.1,"timebin24":1.5,"timebin25":2.7,"timebin26":3.9,"timebin27":6.0,"timebin28":9.8,"timebin29":16.3,"timebin30":21.5,"timebin31":23.4,"timebin32":21.8,"timebin33":15.0,"timebin34":9.2,"timebin35":3.9,"timebin36":1.7,"timebin37":0.7,"timebin38":0.4,"timebin39":0.3,"timebin40":0.4,"timebin41":1.2,"timebin42":4.3,"timebin43":15.0,"timebin44":32.1,"timebin45":59.6,"timebin46":77.8,"timebin47":90.4,"timebin48":95.4},
+            {"agegrp":"26–35","timebin1":97.4,"timebin2":97.9,"timebin3":95.0,"timebin4":95.0,"timebin5":84.5,"timebin6":84.5,"timebin7":66.5,"timebin8":66.5,"timebin9":98.4,"timebin10":96.1,"timebin11":84.3,"timebin12":68.1,"timebin13":41.1,"timebin14":23.8,"timebin15":10.3,"timebin16":4.9,"timebin17":2.1,"timebin18":1.2,"timebin19":0.7,"timebin20":0.6,"timebin21":0.5,"timebin22":0.6,"timebin23":0.9,"timebin24":1.4,"timebin25":2.4,"timebin26":3.4,"timebin27":5.5,"timebin28":9.1,"timebin29":15.2,"timebin30":20.9,"timebin31":23.2,"timebin32":21.6,"timebin33":14.9,"timebin34":8.8,"timebin35":3.6,"timebin36":1.3,"timebin37":0.5,"timebin38":0.3,"timebin39":0.3,"timebin40":0.4,"timebin41":1.5,"timebin42":4.7,"timebin43":15.6,"timebin44":33.8,"timebin45":62.5,"timebin46":81.4,"timebin47":93.0,"timebin48":96.8},
+            {"agegrp":"36–45","timebin1":97.5,"timebin2":97.8,"timebin3":94.1,"timebin4":94.1,"timebin5":81.8,"timebin6":81.8,"timebin7":62.5,"timebin8":62.4,"timebin9":98.2,"timebin10":94.8,"timebin11":79.4,"timebin12":60.5,"timebin13":32.3,"timebin14":17.1,"timebin15":6.3,"timebin16":2.9,"timebin17":1.2,"timebin18":0.7,"timebin19":0.5,"timebin20":0.5,"timebin21":0.5,"timebin22":0.7,"timebin23":1.0,"timebin24":1.5,"timebin25":2.6,"timebin26":3.7,"timebin27":6.0,"timebin28":10.0,"timebin29":16.7,"timebin30":21.8,"timebin31":22.9,"timebin32":20.7,"timebin33":13.6,"timebin34":7.8,"timebin35":3.0,"timebin36":1.2,"timebin37":0.5,"timebin38":0.3,"timebin39":0.3,"timebin40":0.5,"timebin41":1.8,"timebin42":5.7,"timebin43":18.2,"timebin44":37.8,"timebin45":67.1,"timebin46":85.0,"timebin47":94.8,"timebin48":97.7},
+            {"agegrp":"46–55","timebin1":97.2,"timebin2":97.4,"timebin3":92.7,"timebin4":92.8,"timebin5":77.5,"timebin6":77.5,"timebin7":56.2,"timebin8":56.1,"timebin9":97.8,"timebin10":94.3,"timebin11":78.5,"timebin12":59.4,"timebin13":31.1,"timebin14":15.7,"timebin15":5.8,"timebin16":2.6,"timebin17":1.1,"timebin18":0.7,"timebin19":0.5,"timebin20":0.5,"timebin21":0.6,"timebin22":0.8,"timebin23":1.3,"timebin24":1.8,"timebin25":3.0,"timebin26":4.3,"timebin27":7.1,"timebin28":12.1,"timebin29":20.5,"timebin30":27.3,"timebin31":28.0,"timebin32":24.8,"timebin33":16.4,"timebin34":9.1,"timebin35":3.5,"timebin36":1.3,"timebin37":0.5,"timebin38":0.4,"timebin39":0.3,"timebin40":0.7,"timebin41":2.4,"timebin42":7.2,"timebin43":22.6,"timebin44":44.0,"timebin45":72.2,"timebin46":87.8,"timebin47":95.6,"timebin48":98.1},
+            {"agegrp":"56–65","timebin1":96.3,"timebin2":96.4,"timebin3":89.8,"timebin4":89.9,"timebin5":71.5,"timebin6":71.4,"timebin7":48.7,"timebin8":48.6,"timebin9":98.0,"timebin10":94.5,"timebin11":80.3,"timebin12":61.5,"timebin13":34.3,"timebin14":17.4,"timebin15":7.1,"timebin16":3.2,"timebin17":1.4,"timebin18":0.7,"timebin19":0.5,"timebin20":0.5,"timebin21":0.8,"timebin22":1.1,"timebin23":1.9,"timebin24":2.7,"timebin25":4.5,"timebin26":6.3,"timebin27":10.0,"timebin28":16.7,"timebin29":27.4,"timebin30":35.4,"timebin31":36.0,"timebin32":31.8,"timebin33":20.6,"timebin34":11.2,"timebin35":4.0,"timebin36":1.4,"timebin37":0.6,"timebin38":0.4,"timebin39":0.4,"timebin40":1.0,"timebin41":3.5,"timebin42":10.3,"timebin43":28.9,"timebin44":51.7,"timebin45":78.5,"timebin46":91.2,"timebin47":96.7,"timebin48":98.4},
+            {"agegrp":"66–75","timebin1":94.8,"timebin2":94.9,"timebin3":86.2,"timebin4":86.2,"timebin5":65.6,"timebin6":65.6,"timebin7":43.4,"timebin8":43.4,"timebin9":98.4,"timebin10":95.5,"timebin11":84.2,"timebin12":69.6,"timebin13":44.3,"timebin14":25.4,"timebin15":11.2,"timebin16":5.1,"timebin17":2.0,"timebin18":1.2,"timebin19":0.8,"timebin20":0.9,"timebin21":1.5,"timebin22":2.2,"timebin23":3.7,"timebin24":5.1,"timebin25":7.4,"timebin26":9.6,"timebin27":14.3,"timebin28":22.7,"timebin29":36.5,"timebin30":46.4,"timebin31":46.7,"timebin32":41.3,"timebin33":26.3,"timebin34":14.6,"timebin35":5.1,"timebin36":1.6,"timebin37":0.7,"timebin38":0.6,"timebin39":0.8,"timebin40":1.6,"timebin41":5.3,"timebin42":14.2,"timebin43":34.9,"timebin44":57.2,"timebin45":81.6,"timebin46":92.6,"timebin47":96.7,"timebin48":98.1},
+            {"agegrp":"80+","timebin1":93.0,"timebin2":93.2,"timebin3":82.7,"timebin4":82.7,"timebin5":60.7,"timebin6":60.7,"timebin7":38.2,"timebin8":38.2,"timebin9":98.6,"timebin10":96.7,"timebin11":89.1,"timebin12":79.6,"timebin13":57.7,"timebin14":37.7,"timebin15":19.6,"timebin16":9.9,"timebin17":4.1,"timebin18":2.3,"timebin19":1.6,"timebin20":1.8,"timebin21":2.6,"timebin22":4.2,"timebin23":6.5,"timebin24":8.3,"timebin25":10.4,"timebin26":12.6,"timebin27":18.6,"timebin28":29.2,"timebin29":45.1,"timebin30":54.6,"timebin31":53.9,"timebin32":47.5,"timebin33":30.4,"timebin34":16.8,"timebin35":5.8,"timebin36":2.0,"timebin37":1.3,"timebin38":1.2,"timebin39":1.7,"timebin40":3.0,"timebin41":7.6,"timebin42":18.2,"timebin43":40.3,"timebin44":62.8,"timebin45":84.1,"timebin46":92.8,"timebin47":96.0,"timebin48":97.3}
+        ];
+        
+        // Population data for each age group
+        const popByAge = [69613, 84213, 99091, 72625, 54363, 44044, 19517, 6984];
+        
+        // Colors for buildings
+        const buildingColors = ['#1a2a4f','#223366','#16213a','#1b2d4b','#223366','#1a2a4f','#16213a','#223366'];
+        
+        // D3 visualization setup
+        let svg, width, height, margin;
+        let currentTimebin = 30;
+        
+        // Timelapse functionality
+        let isPlaying = false;
+        let playInterval;
+        const playSpeed = 1000; // milliseconds between frames (1 second)
+        
+        // Initialize visualization
+        function initVisualization() {
+            // Set up dimensions
+            const container = d3.select('#visualization');
+            margin = {top: 40, right: 40, bottom: 80, left: 80};
+            
+            // Make responsive
+            const containerWidth = parseInt(container.style('width'));
+            width = Math.min(containerWidth, 1200) - margin.left - margin.right;
+            height = Math.min(width * 0.6, 500);
+            
+            // Clear any existing SVG
+            container.selectAll('*').remove();
+            
+            // Create SVG
+            svg = container.append('svg')
+                .attr('width', width + margin.left + margin.right)
+                .attr('height', height + margin.bottom + margin.top)
+                .style('background', 'none');
+            
+            // Add filters and gradients
+            addFiltersAndGradients();
+            
+            // Create main group
+            const g = svg.append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+            
+            // Draw Y-axis
+            drawYAxis(g);
+            
+            // Draw buildings
+            drawBuildings(g, currentTimebin);
+        }
+        
+        function addFiltersAndGradients() {
+            const defs = svg.append('defs');
+            
+            // Enhanced glow filter for lit windows
+            const filter = defs.append('filter')
+                .attr('id', 'glow')
+                .attr('x', '-100%')
+                .attr('y', '-100%')
+                .attr('width', '300%')
+                .attr('height', '300%');
+            
+            // Multiple glow layers for stronger effect
+            filter.append('feGaussianBlur')
+                .attr('stdDeviation', '3')
+                .attr('result', 'glow1');
+            
+            filter.append('feGaussianBlur')
+                .attr('stdDeviation', '6')
+                .attr('result', 'glow2');
+            
+            filter.append('feGaussianBlur')
+                .attr('stdDeviation', '12')
+                .attr('result', 'glow3');
+            
+            // Merge all glow layers
+            const feMerge = filter.append('feMerge');
+            feMerge.append('feMergeNode').attr('in', 'glow3');
+            feMerge.append('feMergeNode').attr('in', 'glow2');
+            feMerge.append('feMergeNode').attr('in', 'glow1');
+            feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+            
+            // Building gradients
+            buildingColors.forEach((color, i) => {
+                const gradient = defs.append('linearGradient')
+                    .attr('id', `buildingGradient${i}`)
+                    .attr('x1', '0%')
+                    .attr('y1', '0%')
+                    .attr('x2', '100%')
+                    .attr('y2', '0%');
+                
+                gradient.append('stop')
+                    .attr('offset', '0%')
+                    .attr('style', `stop-color:${color};stop-opacity:1`);
+                
+                gradient.append('stop')
+                    .attr('offset', '100%')
+                    .attr('style', `stop-color:${d3.rgb(color).darker(0.5)};stop-opacity:1`);
+            });
+        }
+        
+        function drawYAxis(g) {
+            const yScale = d3.scaleLinear()
+                .domain([0, 120])
+                .range([height, 0]);
+            
+            // Y-axis line
+            g.append('line')
+                .attr('x1', 0)
+                .attr('y1', 0)
+                .attr('x2', 0)
+                .attr('y2', height)
+                .attr('stroke', '#ffe082')
+                .attr('stroke-width', 2);
+            
+            // Y-axis title
+            g.append('text')
+                .attr('class', 'y-axis-title')
+                .attr('transform', 'rotate(-90)')
+                .attr('x', -height / 2)
+                .attr('y', -50)
+                .text('Population (thousands)');
+            
+            // X-axis title (Age Bracket)
+            g.append('text')
+                .attr('class', 'y-axis-title')
+                .attr('x', width / 2)
+                .attr('y', height + 60)
+                .text('Age Bracket');
+            
+            // Y-axis ticks and labels
+            const ticks = d3.range(0, 125, 5);
+            ticks.forEach(tick => {
+                g.append('text')
+                    .attr('class', 'y-axis-label')
+                    .attr('x', -10)
+                    .attr('y', yScale(tick) + 4)  // Position relative to Y-axis line
+                    .text(tick);
+            });
+        }
+        
+        function drawBuildings(g, timebin) {
+            const buildingWidth = Math.min(60, (width - 100) / 8);
+            const buildingSpacing = (width - 100) / 8;
+            const yScale = d3.scaleLinear()
+                .domain([0, 120])
+                .range([height, 0]);
+            
+            // Building groups
+            const buildings = g.selectAll('.building')
+                .data(barData)
+                .join('g')
+                .attr('class', 'building')
+                .attr('transform', (d, i) => `translate(${50 + i * buildingSpacing}, ${yScale(0)})`);
+            
+            // Traditional building structure
+            buildings.selectAll('.building-rect').remove();
+            
+            buildings.each(function(d, i) {
+                const building = d3.select(this);
+                const buildingHeight = (popByAge[i] / 120000) * height;
+                
+                // Main building body
+                building.append('rect')
+                    .attr('class', 'building-rect')
+                    .attr('x', 0)
+                    .attr('y', -buildingHeight)
+                    .attr('width', buildingWidth)
+                    .attr('height', buildingHeight)
+                    .attr('fill', `url(#buildingGradient${i})`)
+                    .attr('stroke', '#334155')
+                    .attr('stroke-width', 1);
+                
+                // Traditional triangular roof
+                const roofHeight = buildingWidth * 0.3;
+                building.append('polygon')
+                    .attr('points', `0,${-buildingHeight} ${buildingWidth/2},${-buildingHeight - roofHeight} ${buildingWidth},${-buildingHeight}`)
+                    .attr('fill', '#2a3d5f')
+                    .attr('stroke', '#ffe082')
+                    .attr('stroke-width', 1);
+                
+                // Roof ridge line
+                building.append('line')
+                    .attr('x1', buildingWidth/2)
+                    .attr('y1', -buildingHeight - roofHeight)
+                    .attr('x2', buildingWidth/2)
+                    .attr('y2', -buildingHeight - roofHeight + 5)
+                    .attr('stroke', '#ffe082')
+                    .attr('stroke-width', 2);
+            });
+            
+            // Add architectural details
+            addArchitecturalDetails(buildings, buildingWidth);
+            
+            // Windows
+            addWindows(buildings, buildingWidth, timebin);
+            
+            // Age labels
+            buildings.selectAll('.age-label').remove();
+            buildings.append('text')
+                .attr('class', 'age-label')
+                .attr('x', buildingWidth / 2)
+                .attr('y', 25)
+                .text(d => d.agegrp);
+            
+            // Tooltip interactions
+            addTooltipInteractions(buildings, timebin);
+            
+            // Add window legend
+            addWindowLegend(g);
+        }
+        
+        function addWindowLegend(g) {
+            // Remove existing legend
+            g.selectAll('.window-legend').remove();
+            
+            // Create legend group
+            const legend = g.append('g')
+                .attr('class', 'window-legend');
+            
+            // Legend background
+            legend.append('rect')
+                .attr('x', width - 140)
+                .attr('y', 20)
+                .attr('width', 120)
+                .attr('height', 80)
+                .attr('fill', 'rgba(26, 42, 79, 0.9)')
+                .attr('stroke', 'rgba(255, 224, 130, 0.5)')
+                .attr('stroke-width', 2)
+                .attr('rx', 12);
+            
+            // Sleeping legend item
+            const sleepItem = legend.append('g')
+                .attr('transform', `translate(${width - 130}, 35)`);
+            
+            // Blue window sample
+            sleepItem.append('rect')
+                .attr('x', 0)
+                .attr('y', 0)
+                .attr('width', 16)
+                .attr('height', 12)
+                .attr('fill', '#1e3a8a')
+                .attr('stroke', '#2a3d5f')
+                .attr('stroke-width', 1)
+                .attr('rx', 2);
+            
+            // Equals sign
+            sleepItem.append('text')
+                .attr('x', 25)
+                .attr('y', 8)
+                .attr('fill', '#ffe082')
+                .attr('font-size', 16)
+                .attr('font-weight', 'bold')
+                .attr('text-anchor', 'middle')
+                .text('=');
+            
+            // Sleeping emoji
+            sleepItem.append('text')
+                .attr('x', 40)
+                .attr('y', 10)
+                .attr('font-size', 20)
+                .attr('text-anchor', 'middle')
+                .text('😴')
+                .style('animation', 'sleepBob 2s ease-in-out infinite');
+            
+            // Z animations
+            sleepItem.append('text')
+                .attr('x', 50)
+                .attr('y', -5)
+                .attr('fill', '#87ceeb')
+                .attr('font-size', 10)
+                .attr('font-weight', 'bold')
+                .text('Z')
+                .style('animation', 'zzzFloat 3s ease-in-out infinite');
+            
+            sleepItem.append('text')
+                .attr('x', 55)
+                .attr('y', -10)
+                .attr('fill', '#87ceeb')
+                .attr('font-size', 10)
+                .attr('font-weight', 'bold')
+                .text('Z')
+                .style('animation', 'zzzFloat 3s ease-in-out infinite 0.5s');
+            
+            sleepItem.append('text')
+                .attr('x', 60)
+                .attr('y', -15)
+                .attr('fill', '#87ceeb')
+                .attr('font-size', 10)
+                .attr('font-weight', 'bold')
+                .text('Z')
+                .style('animation', 'zzzFloat 3s ease-in-out infinite 1s');
+            
+            // Awake legend item
+            const awakeItem = legend.append('g')
+                .attr('transform', `translate(${width - 130}, 65)`);
+            
+            // Yellow window sample with glow
+            awakeItem.append('rect')
+                .attr('x', 0)
+                .attr('y', 0)
+                .attr('width', 16)
+                .attr('height', 12)
+                .attr('fill', '#fbbf24')
+                .attr('stroke', '#2a3d5f')
+                .attr('stroke-width', 1)
+                .attr('rx', 2)
+                .style('filter', 'url(#glow)');
+            
+            // Equals sign
+            awakeItem.append('text')
+                .attr('x', 25)
+                .attr('y', 8)
+                .attr('fill', '#ffe082')
+                .attr('font-size', 16)
+                .attr('font-weight', 'bold')
+                .attr('text-anchor', 'middle')
+                .text('=');
+            
+            // Awake emoji (original colors)
+            awakeItem.append('text')
+                .attr('x', 40)
+                .attr('y', 10)
+                .attr('font-size', 20)
+                .attr('text-anchor', 'middle')
+                .text('😄')
+                .style('animation', 'awakePulse 1.5s ease-in-out infinite');
+        }
+        
+        function addArchitecturalDetails(buildings, buildingWidth) {
+            buildings.each(function(d, i) {
+                const building = d3.select(this);
+                const buildingHeight = (popByAge[i] / 120000) * height;
+                const roofHeight = buildingWidth * 0.3;
+                
+                // Add building depth/shadow effect
+                building.append('rect')
+                    .attr('x', 2)
+                    .attr('y', -buildingHeight + 2)
+                    .attr('width', buildingWidth)
+                    .attr('height', buildingHeight)
+                    .attr('fill', '#0a1426')
+                    .attr('opacity', 0.4);
+                
+                // Traditional brick texture lines
+                const brickRows = Math.floor(buildingHeight / 8);
+                for (let row = 1; row < brickRows; row++) {
+                    const brickY = -buildingHeight + (row * 8);
+                    building.append('line')
+                        .attr('x1', 0)
+                        .attr('y1', brickY)
+                        .attr('x2', buildingWidth)
+                        .attr('y2', brickY)
+                        .attr('stroke', '#334155')
+                        .attr('stroke-width', 0.3)
+                        .attr('opacity', 0.6);
+                    
+                    // Brick pattern - offset every other row
+                    if (row % 2 === 0) {
+                        for (let brick = 1; brick < 4; brick++) {
+                            const brickX = (brick * buildingWidth / 4);
+                            building.append('line')
+                                .attr('x1', brickX)
+                                .attr('y1', brickY - 4)
+                                .attr('x2', brickX)
+                                .attr('y2', brickY + 4)
+                                .attr('stroke', '#334155')
+                                .attr('stroke-width', 0.3)
+                                .attr('opacity', 0.4);
+                        }
+                    }
+                }
+                
+                // Roof shadow under eaves
+                building.append('line')
+                    .attr('x1', -1)
+                    .attr('y1', -buildingHeight)
+                    .attr('x2', buildingWidth + 1)
+                    .attr('y2', -buildingHeight)
+                    .attr('stroke', '#0a1426')
+                    .attr('stroke-width', 3)
+                    .attr('opacity', 0.7);
+                
+                // Traditional arched entrance
+                const entranceWidth = buildingWidth * 0.3;
+                const entranceX = (buildingWidth - entranceWidth) / 2;
+                
+                // Entrance arch background
+                building.append('rect')
+                    .attr('x', entranceX)
+                    .attr('y', -15)
+                    .attr('width', entranceWidth)
+                    .attr('height', 15)
+                    .attr('fill', '#0a1426');
+                
+                // Arched top
+                building.append('path')
+                    .attr('d', `M ${entranceX} -15 Q ${entranceX + entranceWidth/2} -20 ${entranceX + entranceWidth} -15`)
+                    .attr('fill', '#0a1426')
+                    .attr('stroke', '#334155')
+                    .attr('stroke-width', 1);
+                
+                // Entrance door
+                building.append('rect')
+                    .attr('x', entranceX + 2)
+                    .attr('y', -12)
+                    .attr('width', entranceWidth - 4)
+                    .attr('height', 10)
+                    .attr('fill', '#1a2a4f')
+                    .attr('stroke', '#334155')
+                    .attr('stroke-width', 0.5);
+                
+                // Door handle
+                building.append('circle')
+                    .attr('cx', entranceX + entranceWidth - 5)
+                    .attr('cy', -7)
+                    .attr('r', 0.8)
+                    .attr('fill', '#ffe082');
+            });
+        }
+        
+        function addWindows(buildings, buildingWidth, timebin) {
+            buildings.selectAll('.window').remove();
+            
+            buildings.each(function(d, i) {
+                const building = d3.select(this);
+                const buildingHeight = (popByAge[i] / 120000) * height;
+                const percent = d[`timebin${timebin}`];
+                const windowsAsleep = Math.round(percent);
+                
+                // Window dimensions
+                const windowsPerRow = 10;
+                const windowsPerCol = 10;
+                const windowWidth = (buildingWidth - 20) / windowsPerRow;
+                const windowHeight = Math.max(3, (buildingHeight - 10) / windowsPerCol);
+                
+                // Create window grid
+                for (let row = 0; row < windowsPerCol; row++) {
+                    for (let col = 0; col < windowsPerRow; col++) {
+                        const windowIndex = row * windowsPerRow + col;
+                        const isAsleep = windowIndex < windowsAsleep;
+                        
+                        const windowX = 10 + col * windowWidth;
+                        const windowY = -buildingHeight + 2 + row * windowHeight;
+                        
+                        // Window frame (deeper)
+                        building.append('rect')
+                            .attr('class', 'window-frame')
+                            .attr('x', windowX - 1.5)
+                            .attr('y', windowY - 1.5)
+                            .attr('width', windowWidth + 2)
+                            .attr('height', windowHeight + 2)
+                            .attr('fill', '#2a3d5f')
+                            .attr('stroke', '#1a2a3f')
+                            .attr('stroke-width', 0.5);
+                        
+                        // Window glass with reflection
+                        const windowGroup = building.append('g');
+                        
+                        // Main window
+                        windowGroup.append('rect')
+                            .attr('class', 'window')
+                            .attr('x', windowX)
+                            .attr('y', windowY)
+                            .attr('width', windowWidth - 1)
+                            .attr('height', windowHeight - 1)
+                            .attr('fill', isAsleep ? '#1e3a8a' : '#fbbf24')
+                            .attr('rx', 0.5)
+                            .classed('awake', !isAsleep)
+                            .style('filter', isAsleep ? 'none' : 'url(#glow)');
+                        
+                        // Window cross dividers
+                        if (windowWidth > 6 && windowHeight > 6) {
+                            // Vertical divider
+                            windowGroup.append('line')
+                                .attr('x1', windowX + (windowWidth - 1) / 2)
+                                .attr('y1', windowY)
+                                .attr('x2', windowX + (windowWidth - 1) / 2)
+                                .attr('y2', windowY + windowHeight - 1)
+                                .attr('stroke', '#2a3d5f')
+                                .attr('stroke-width', 0.5);
+                            
+                            // Horizontal divider
+                            windowGroup.append('line')
+                                .attr('x1', windowX)
+                                .attr('y1', windowY + (windowHeight - 1) / 2)
+                                .attr('x2', windowX + windowWidth - 1)
+                                .attr('y2', windowY + (windowHeight - 1) / 2)
+                                .attr('stroke', '#2a3d5f')
+                                .attr('stroke-width', 0.5);
+                        }
+                        
+                        // Window sill with shadow
+                        building.append('rect')
+                            .attr('class', 'window-sill')
+                            .attr('x', windowX - 2)
+                            .attr('y', windowY + windowHeight - 0.5)
+                            .attr('width', windowWidth + 3)
+                            .attr('height', 1.5)
+                            .attr('fill', '#3a4d6f');
+                        
+                        // Enhanced window reflection and glow for lit windows
+                        if (!isAsleep && windowWidth > 4 && windowHeight > 4) {
+                            // Main reflection
+                            windowGroup.append('rect')
+                                .attr('x', windowX + 0.5)
+                                .attr('y', windowY + 0.5)
+                                .attr('width', (windowWidth - 1) / 3)
+                                .attr('height', (windowHeight - 1) / 4)
+                                .attr('fill', '#fff')
+                                .attr('opacity', 0.4)
+                                .attr('rx', 0.5);
+                            
+                            // Additional glow border for stronger effect
+                            windowGroup.append('rect')
+                                .attr('x', windowX - 0.5)
+                                .attr('y', windowY - 0.5)
+                                .attr('width', windowWidth)
+                                .attr('height', windowHeight)
+                                .attr('fill', 'none')
+                                .attr('stroke', '#fbbf24')
+                                .attr('stroke-width', 0.5)
+                                .attr('opacity', 0.8)
+                                .attr('rx', 0.5)
+                                .style('filter', 'url(#glow)');
+                        }
+                    }
+                }
+            });
+        }
+        
+        function addTooltipInteractions(buildings, timebin) {
+            const tooltip = d3.select('#tooltip');
+            
+            buildings
+                .on('mouseenter', function(event, d) {
+                    const i = barData.indexOf(d);
+                    const percent = d[`timebin${timebin}`];
+                    const pop = popByAge[i];
+                    
+                    tooltip.html(`
+                        <strong>${d.agegrp}</strong><br>
+                        Population: ${pop.toLocaleString()} people<br>
+                        🟡 Awake: ${(100 - percent).toFixed(1)}%<br>
+                        🔵 Asleep: ${percent.toFixed(1)}%
+                    `)
+                    .style('opacity', 1)
+                    .style('left', (event.pageX + 10) + 'px')
+                    .style('top', (event.pageY - 10) + 'px');
+                })
+                .on('mouseleave', function() {
+                    tooltip.style('opacity', 0);
+                })
+                .on('mousemove', function(event) {
+                    tooltip
+                        .style('left', (event.pageX + 10) + 'px')
+                        .style('top', (event.pageY - 10) + 'px');
+                });
+        }
+        
+        function updateVisualization(timebin) {
+            const g = svg.select('g');
+            drawBuildings(g, timebin);
+        }
+        
+        function binNumberToWords(bin_num) {
+            let hour = Math.floor(bin_num / 2);
+            let ampm_start, ampm_finish;
+            if (hour == 0 || hour == 24) {
+                ampm_start = "am"; ampm_finish = "am"; hour = 12;
+            } else if (hour == 12) {
+                ampm_start = "pm"; ampm_finish = "pm";
+            } else if (hour > 12) {
+                ampm_start = "pm"; ampm_finish = "pm"; hour -= 12;
+            } else {
+                ampm_start = "am"; ampm_finish = "am";
+            }
+            let remainder = bin_num % 2;
+            if (remainder == 0) {
+                return hour + ":00"+ampm_start+"-" + hour + ":29"+ampm_finish;
+            } else {
+                return hour + ":30"+ampm_start+"-" + hour + ":59"+ampm_finish;
+            }
+        }
+        
+        function getTimeFromBin(bin_num) {
+            let hour = Math.floor((bin_num - 1) / 2);
+            let minute = ((bin_num - 1) % 2) * 30;
+            let ampm = hour >= 12 ? 'PM' : 'AM';
+            let displayHour = hour === 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+            
+            return {
+                hour: displayHour,
+                minute: minute,
+                ampm: ampm,
+                hour24: hour,
+                timeString: `${displayHour}:${minute.toString().padStart(2, '0')}`
+            };
+        }
+        
+        function getPeriodDescription(hour24, minute) {
+            const totalMinutes = hour24 * 60 + minute;
+            
+            if (totalMinutes >= 0 && totalMinutes < 360) { // 12 AM - 6 AM
+                return "Late Night";
+            } else if (totalMinutes >= 360 && totalMinutes < 720) { // 6 AM - 12 PM
+                return "Early Morning";
+            } else if (totalMinutes >= 720 && totalMinutes < 1080) { // 12 PM - 6 PM
+                return "Afternoon";
+            } else if (totalMinutes >= 1080 && totalMinutes < 1320) { // 6 PM - 10 PM
+                return "Evening";
+            } else { // 10 PM - 12 AM
+                return "Night";
+            }
+        }
+        
+        function updateTimeDisplay(timebin) {
+            const timeRange = binNumberToWords(timebin);
+            document.getElementById('time-display').textContent = timeRange;
+        }
+        
+        // Timelapse functions
+        function startTimelapse() {
+            isPlaying = true;
+            document.getElementById('play-icon').innerHTML = '⏸️';
+            document.getElementById('play-text').innerHTML = 'Pause';
+            document.getElementById('play-btn').classList.add('playing');
+            document.getElementById('play-btn').title = 'Pause timelapse';
+            
+            playInterval = setInterval(() => {
+                currentTimebin++;
+                if (currentTimebin > 48) {
+                    currentTimebin = 1; // Loop back to start
+                }
+                updateSliderAndVisualization(currentTimebin);
+            }, playSpeed);
+        }
+        
+        function stopTimelapse() {
+            isPlaying = false;
+            document.getElementById('play-icon').innerHTML = '▶️';
+            document.getElementById('play-text').innerHTML = 'Play me!';
+            document.getElementById('play-btn').classList.remove('playing');
+            document.getElementById('play-btn').title = 'Play timelapse';
+            
+            if (playInterval) {
+                clearInterval(playInterval);
+                playInterval = null;
+            }
+        }
+        
+        function toggleTimelapse() {
+            if (isPlaying) {
+                stopTimelapse();
+            } else {
+                startTimelapse();
+            }
+        }
+        
+        function updateSliderAndVisualization(timebin) {
+            document.getElementById('timebin-slider').value = timebin;
+            updateTimeDisplay(timebin);
+            updateVisualization(timebin);
+        }
+        
+        // Event listeners
+        document.getElementById('play-btn').addEventListener('click', toggleTimelapse);
+        
+        document.getElementById('timebin-slider').addEventListener('input', function() {
+            // Stop timelapse if user manually moves slider
+            if (isPlaying) {
+                stopTimelapse();
+            }
+            
+            currentTimebin = +this.value;
+            updateTimeDisplay(currentTimebin);
+            updateVisualization(currentTimebin);
+        });
+        
+
+        
+        // Modal functions
+        function showHelp() {
+            document.getElementById('help-modal').style.display = 'flex';
+        }
+        
+        function closeHelp() {
+            document.getElementById('help-modal').style.display = 'none';
+        }
+        
+        // Responsive resize
+        window.addEventListener('resize', debounce(initVisualization, 250));
+        
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initVisualization();
+            updateTimeDisplay(currentTimebin);
+        });
+    </script>
+</body>
+</html> 
